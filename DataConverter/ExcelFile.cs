@@ -70,6 +70,8 @@ namespace DataConverter
                     {
                         Console.WriteLine($"{sheet.Name}> {(sheet.Cells[1, col] as Excel.Range).Value2} (1, {col})");
                         Console.WriteLine(e);
+
+                        throw;
                     }
                 }
 
@@ -87,6 +89,8 @@ namespace DataConverter
                         {
                             Console.WriteLine($"{sheet.Name}> {(range.Cells[row + 2, col + 1] as Excel.Range).Value2} ({row + 2}, {col + 1})");
                             Console.WriteLine(e);
+
+                            throw;
                         }
                     }
 
