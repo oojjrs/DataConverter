@@ -61,14 +61,35 @@ namespace DataConverter
                 var range = sheet.UsedRange;
 
                 for (int col = 1; col <= range.Columns.Count; ++col)
-                    dt.Columns.Add((sheet.Cells[1, col] as Excel.Range).Value2);
+                {
+                    try
+                    {
+                        dt.Columns.Add((sheet.Cells[1, col] as Excel.Range).Value2);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine($"{sheet.Name}> {(sheet.Cells[1, col] as Excel.Range).Value2} (1, {col})");
+                        Console.WriteLine(e);
+                    }
+                }
 
                 // 첫 번째 줄은 컬럼명이기 때문에 실제 데이터는 rows count - 1
                 for (int row = 0; row < range.Rows.Count - 1; ++row)
                 {
                     var dr = dt.NewRow();
                     for (int col = 0; col < range.Columns.Count; ++col)
-                        dr[col] = (range.Cells[row + 2, col + 1] as Excel.Range).Value2;
+                    {
+                        try
+                        {
+                            dr[col] = (range.Cells[row + 2, col + 1] as Excel.Range).Value2;
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine($"{sheet.Name}> {(range.Cells[row + 2, col + 1] as Excel.Range).Value2} ({row + 2}, {col + 1})");
+                            Console.WriteLine(e);
+                        }
+                    }
+
                     dt.Rows.Add(dr);
                 }
 
