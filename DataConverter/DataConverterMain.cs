@@ -3,6 +3,7 @@ using System;
 using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -23,6 +24,8 @@ namespace DataConverter
             var ds = MergeAll(files.Select(file => file.Import()));
 
             Console.WriteLine("Convert to C# Struct...");
+
+            var sw = Stopwatch.StartNew();
             foreach (var type in types)
             {
                 var table = ds.Tables[type.Name];
@@ -39,7 +42,7 @@ namespace DataConverter
                     s.Serialize(fs, instances);
                 }
             }
-            Console.WriteLine("Complete.");
+            Console.WriteLine($"Complete. ({sw.ElapsedMilliseconds} ms)");
         }
 
         private static object CreateInstanceValues(DataSet ds, Type type, DataRow[] rows)
@@ -142,6 +145,7 @@ namespace DataConverter
 
         private static Type[] GetAllDataTypes(string root)
         {
+            var sw = Stopwatch.StartNew();
             var provider = new CSharpCodeProvider();
             var files = Directory.EnumerateFiles(root, "*.cs", SearchOption.TopDirectoryOnly).Where(t => t.EndsWith("Data.cs") || t.EndsWith("Type.cs")).ToArray();
             var ret = provider.CompileAssemblyFromFile(new CompilerParameters()
@@ -157,16 +161,22 @@ namespace DataConverter
                 return Array.Empty<Type>();
             }
 
-            return ret.CompiledAssembly.GetTypes().Where(t => t.Name.EndsWith("Data")).ToArray();
+            var types = ret.CompiledAssembly.GetTypes().Where(t => t.Name.EndsWith("Data")).ToArray();
+
+            Console.WriteLine($"Types : {types.Length} ({sw.ElapsedMilliseconds} ms)");
+            return types;
         }
 
         private static void Main(string[] args)
         {
-            var typeRoot = args.Length > 0 ? args[0] : @"..\..\..\..\..\Assets\Script\Data";
-            var dataRoot = args.Length > 1 ? args[1] : @"..\..\..\..\..\Data";
-            var outputRoot = args.Length > 2 ? args[2] : @"..\..\..\..\..\Assets\Source\Data";
+            var typeRoot = args.Length > 0 ? args[0] : @"D:\Meister2\Meister2\Assets\Sources\Scripts\Entity";
+            var dataRoot = args.Length > 1 ? args[1] : @"D:\Meister2\Meister2\Data";
+            var outputRoot = args.Length > 2 ? args[2] : @"D:\Meister2\Meister2\Assets\Sources\Data";
 
             ConvertData(GetAllDataTypes(typeRoot), dataRoot, outputRoot);
+
+            Console.Write("Press any key to continue...");
+            Console.ReadKey();
         }
 
         private static DataSet MergeAll(IEnumerable<DataSet> dss)

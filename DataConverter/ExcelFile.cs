@@ -1,7 +1,6 @@
-﻿using Excel = Microsoft.Office.Interop.Excel;
-using System;
+﻿using ExcelDataReader;
 using System.Data;
-using System.Runtime.InteropServices;
+using System.IO;
 
 namespace DataConverter
 {
@@ -16,92 +15,20 @@ namespace DataConverter
 
         public DataSet Import()
         {
-            Excel.Application app = null;
-            Excel.Workbook wb = null;
-            Excel.Workbook ex = null;
-            try
+            using (var s = File.OpenRead(_path))
             {
-                app = new Excel.Application();
-                app.DisplayAlerts = false;
-                wb = app.Workbooks.Open(_path);
-
-                return Import(wb);
-            }
-            finally
-            {
-                if (ex != null)
+                using (var reader = ExcelReaderFactory.CreateReader(s))
                 {
-                    ex.Close();
-                    Marshal.ReleaseComObject(ex);
-                }
-                if (wb != null)
-                {
-                    wb.Close();
-                    Marshal.ReleaseComObject(wb);
-                }
-                if (app != null)
-                {
-                    app.Quit();
-                    Marshal.ReleaseComObject(app);
-                }
-                GC.Collect();
-            }
-        }
-
-        private DataSet Import(Excel.Workbook workbook)
-        {
-            var ds = new DataSet();
-
-            foreach (Excel.Worksheet sheet in workbook.Sheets)
-            {
-                if (sheet.Name.StartsWith("#"))
-                    continue;
-
-                var dt = new DataTable(sheet.Name);
-                var range = sheet.UsedRange;
-
-                for (int col = 1; col <= range.Columns.Count; ++col)
-                {
-                    try
+                    return reader.AsDataSet(new ExcelDataSetConfiguration()
                     {
-                        dt.Columns.Add((sheet.Cells[1, col] as Excel.Range).Value2);
-                    }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine($"{sheet.Name}> {(sheet.Cells[1, col] as Excel.Range).Value2} (1, {col})");
-                        Console.WriteLine(e);
-
-                        throw;
-                    }
-                }
-
-                // 첫 번째 줄은 컬럼명이기 때문에 실제 데이터는 rows count - 1
-                for (int row = 0; row < range.Rows.Count - 1; ++row)
-                {
-                    var dr = dt.NewRow();
-                    for (int col = 0; col < range.Columns.Count; ++col)
-                    {
-                        try
+                        ConfigureDataTable = tableReader => new ExcelDataTableConfiguration()
                         {
-                            dr[col] = (range.Cells[row + 2, col + 1] as Excel.Range).Value2;
-                        }
-                        catch (Exception e)
-                        {
-                            Console.WriteLine($"{sheet.Name}> {(range.Cells[row + 2, col + 1] as Excel.Range).Value2} ({row + 2}, {col + 1})");
-                            Console.WriteLine(e);
-
-                            throw;
-                        }
-                    }
-
-                    dt.Rows.Add(dr);
+                            UseHeaderRow = true,
+                        },
+                        UseColumnDataType = true,
+                    });
                 }
-
-                ds.Tables.Add(dt);
-                Marshal.ReleaseComObject(sheet);
             }
-
-            return ds;
         }
     }
 }
