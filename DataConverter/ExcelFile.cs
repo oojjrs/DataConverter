@@ -1,34 +1,25 @@
 ﻿using ExcelDataReader;
 using System.Data;
-using System.IO;
 
 namespace DataConverter
 {
-    public class ExcelFile
+    public class ExcelFile(string path)
     {
-        private string _path;
-
-        public ExcelFile(string path)
-        {
-            _path = path;
-        }
+        private string Path { get; } = path;
 
         public DataSet Import()
         {
-            using (var s = File.OpenRead(_path))
+            using var s = File.OpenRead(Path);
+            using var reader = ExcelReaderFactory.CreateReader(s);
+
+            return reader.AsDataSet(new()
             {
-                using (var reader = ExcelReaderFactory.CreateReader(s))
+                ConfigureDataTable = tableReader => new()
                 {
-                    return reader.AsDataSet(new ExcelDataSetConfiguration()
-                    {
-                        ConfigureDataTable = tableReader => new ExcelDataTableConfiguration()
-                        {
-                            UseHeaderRow = true,
-                        },
-                        UseColumnDataType = true,
-                    });
-                }
-            }
+                    UseHeaderRow = true,
+                },
+                UseColumnDataType = true,
+            });
         }
     }
 }
