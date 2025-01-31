@@ -15,7 +15,20 @@ var tds = new DataSet();
 
     Console.WriteLine("Import {0} Files...", files.Length);
     foreach (var ds in files.Select(file => file.Import()))
-        tds.Merge(ds);
+    {
+        if (ds.Tables.Cast<DataTable>().Any(t => t.TableName.StartsWith("#")))
+        {
+            var filteredset = new DataSet();
+            foreach (var table in ds.Tables.Cast<DataTable>().Where(t => t.TableName.StartsWith("#") == false))
+                filteredset.Tables.Add(table.Copy());
+
+            tds.Merge(filteredset);
+        }
+        else
+        {
+            tds.Merge(ds);
+        }
+    }
 }
 
 Directory.CreateDirectory(outputRoot);
